@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Love Quiz 💖</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif}
+
+body{
+  background:linear-gradient(120deg,#ff9a9e,#fad0c4);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+
+/* HEART BACKGROUND */
+#hearts{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:-1;
+  pointer-events:none;
+}
+
+.container{
+  background:#fff;
+  width:450px;
+  padding:25px;
+  border-radius:20px;
+  box-shadow:0 15px 30px rgba(0,0,0,.25);
+  animation:fade .6s ease;
+}
+
+@keyframes fade{
+  from{opacity:0;transform:scale(.9)}
+  to{opacity:1;transform:scale(1)}
+}
+
+h1{
+  font-family:'Pacifico',cursive;
+  color:#ff6b81;
+  text-align:center;
+  margin-bottom:10px;
+}
+
+.hidden{display:none}
+
+input,button{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+button{
+  background:#ff6b81;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+button:hover{background:#ff4757}
+
+.progress{
+  background:#ffe3e8;
+  height:8px;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  background:#ff6b81;
+}
+
+.options button{margin:5px 0}
+
+.timer{
+  text-align:right;
+  color:#ff4757;
+  font-weight:bold;
+  margin-top:5px;
+}
+
+.msg{
+  text-align:center;
+  font-size:18px;
+  margin-top:10px;
+  min-height:40px;
+}
+
+.dashboard{
+  margin-top:15px;
+  animation:slideUp .6s ease;
+}
+
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.chart{
+  background:#ffe3e8;
+  border-radius:10px;
+  padding:10px;
+  margin-top:10px;
+}
+
+.barChart{
+  height:20px;
+  background:#ff6b81;
+  border-radius:10px;
+  width:0%;
+  transition:width 1s;
+}
+
+.success{color:green;font-size:22px}
+.fail{color:#ff4757;font-size:22px}
+</style>
+</head>
+
+<body>
+
+<canvas id="hearts"></canvas>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login">
+  <h1>💖 Love Quiz 💖</h1>
+  <input id="name" placeholder="Enter name">
+  <button onclick="login()">Login</button>
+  <p id="err" style="color:red;text-align:center"></p>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="hidden">
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="timer">⏱️ <span id="time">10</span>s</div>
+  <p id="count"></p>
+  <h3 id="q"></h3>
+  <div class="options" id="opt"></div>
+  <div class="msg" id="feedback"></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="hidden">
+  <p id="finalMsg" class="msg"></p>
+
+  <div class="dashboard">
+    <h3 style="text-align:center;color:#ff6b81">📊 Recent Performance</h3>
+    <p style="text-align:center">
+      Score: <b id="scoreText"></b><br>
+      Time: <span id="timeText"></span>
+    </p>
+
+    <div class="chart">
+      <div class="barChart" id="chartBar"></div>
+    </div>
+  </div>
+
+  <button id="againBtn" onclick="restart()">Play Again 🔄</button>
+</div>
+
+</div>
+
+<script>
+const quizData=[
+ {
+  q:"What is my favorite place??",
+  o:["Your Home", "Your Lap", "Your That", "Your Inside"],
+    a: "Your That",
+  correctMsg:"🎉🎉 Aw!  My Naughty Man 💖 💖",
+  wrongMsg:"❌ Rub Your D and choose right one!! ❤️"
+ },
+ {
+  q:"If we fight, who will say sorry first?",
+  o:["Me 😌", "Its only Me", "NO one Accept Me", "You"],
+    a: "Its only Me",
+  correctMsg:"🥰 I know it is Only you Darling 😉 💕",
+  wrongMsg:"what are you thinking huh🧐?"
+ },
+ {
+  q:"What is my favorite food?",
+  o:["Your Body ", "Your Lip ", "Your Little one", "WHole You"],
+    a: "Your Little one",
+  correctMsg:"🍫 🍫 Ahhh!!! sooo yummyy 🥵😍",
+  wrongMsg:"😜Choose From Your lower part Baby 😔!"
+ },
+ {
+    q:"Which Drama do I love the most?",
+ o: ["365 Your day", "You r The Favorite Chapter", "Your Hub ", "Your Series"],
+    a: "You r The Favorite Chapter",
+    correctMsg: "🎬you find correct one wow! ❤️",
+    wrongMsg: "Think Again 😒🎬",
+  },
+
+ 
+];
+
+let i=0,score=0,time=10,timer;
+
+function login(){
+  if(document.getElementById("name").value==="Rock Star"){
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("quiz").classList.remove("hidden");
+    load();
+  }else{
+    document.getElementById("err").innerText="Access Denied ❌";
+  }
+}
+
+function startTimer(){
+  clearInterval(timer);
+  time=10;
+  document.getElementById("time").innerText=time;
+  timer=setInterval(()=>{
+    time--;
+    document.getElementById("time").innerText=time;
+    if(time===0){
+      clearInterval(timer);
+      autoWrong();
+    }
+  },1000);
+}
+
+function load(){
+  if(i>=quizData.length){finish();return;}
+  const q=quizData[i];
+  document.getElementById("feedback").innerText="";
+  document.getElementById("q").innerText=q.q;
+  document.getElementById("count").innerText=`Question ${i+1}/${quizData.length}`;
+  document.getElementById("bar").style.width=(i/quizData.length)*100+"%";
+  let o="";
+  q.o.forEach(x=>{
+    o+=`<button onclick="check('${x}')">${x}</button>`;
+  });
+  document.getElementById("opt").innerHTML=o;
+  startTimer();
+}
+
+function check(ans){
+  clearInterval(timer);
+  const q=quizData[i];
+  document.getElementById("feedback").innerText=
+    ans===q.a ? q.correctMsg : q.wrongMsg;
+  if(ans===q.a) score++;
+  setTimeout(()=>{i++;load();},1500);
+}
+
+function autoWrong(){
+  document.getElementById("feedback").innerText="⏰ Time's up!";
+  setTimeout(()=>{i++;load();},1200);
+}
+
+function finish(){
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+
+  const success=score===quizData.length;
+  document.getElementById("finalMsg").innerHTML=
+    success
+    ? `<span class="success">🎉 YAY! You are So Lovable ILOVEYOU 💖</span>`
+    : `<span class="fail">TRY AGAIN BABE</span>`;
+
+  document.getElementById("againBtn").style.display=
+    success?"none":"block";
+
+  document.getElementById("scoreText").innerText=
+    `${score}/${quizData.length}`;
+  document.getElementById("timeText").innerText=
+    new Date().toLocaleString();
+
+  document.getElementById("chartBar").style.width=
+    (score/quizData.length)*100+"%";
+}
+
+function restart(){
+  i=0;score=0;
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  document.getElementById("bar").style.width="0%";
+  load();
+}
+
+/* HEART PARTICLE ANIMATION */
+const canvas=document.getElementById("hearts");
+const ctx=canvas.getContext("2d");
+
+function resize(){
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener("resize",resize);
+
+let hearts=[];
+function Heart(){
+  this.x=Math.random()*canvas.width;
+  this.y=canvas.height+Math.random()*canvas.height;
+  this.s=8+Math.random()*10;
+  this.v=0.4+Math.random();
+}
+
+function drawHeart(x,y,s){
+  ctx.fillStyle="rgba(255,107,129,0.6)";
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.bezierCurveTo(x-s,y-s,x-2*s,y+s,x,y+2*s);
+  ctx.bezierCurveTo(x+2*s,y+s,x+s,y-s,x,y);
+  ctx.fill();
+}
+
+for(let i=0;i<35;i++) hearts.push(new Heart());
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hearts.forEach(h=>{
+    h.y-=h.v;
+    if(h.y<-50){
+      h.y=canvas.height+50;
+      h.x=Math.random()*canvas.width;
+    }
+    drawHeart(h.x,h.y,h.s);
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
